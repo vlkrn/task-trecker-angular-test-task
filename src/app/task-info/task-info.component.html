@@ -1,0 +1,83 @@
+<ng-container *ngIf="loadFormData$ | async; else spinner">
+<div class="task-info" [formGroup]="formGroup">
+    <div class="task-form">
+        <div>
+            <button mat-raised-button (click)="router.navigate([''])"><mat-icon>west</mat-icon>К списку задач</button>
+            <button mat-raised-button color="primary" [disabled]="formGroup.invalid" (click)="saveTask()">Сохранить</button>
+        </div>
+        <mat-divider></mat-divider>
+        <mat-form-field>
+            <mat-label>Название</mat-label>
+            <input type="email" matInput formControlName="title" placeholder="Название">
+                    @if (formGroup.controls['title'].hasError('required')) {
+                    <mat-error>Название <strong>необходимо</strong></mat-error>
+                    }
+        </mat-form-field>
+
+        <mat-form-field>
+            <mat-label>Дедлайн</mat-label>
+            <input matInput [matDatepicker]="picker" [min]="minDate" formControlName="deadline">
+            @if (formGroup.controls['deadline'].hasError('required')) {
+                <mat-error>Дейдлан <strong>необходим</strong></mat-error>
+            }
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        <div>
+            <label id="priority-group-label">Приоритет:</label>
+            <mat-radio-group aria-label="priority-group-label" formControlName="priority">
+                <mat-radio-button [value]="0">Низкий</mat-radio-button>
+                <mat-radio-button [value]="1">Средний</mat-radio-button>
+                <mat-radio-button [value]="2">Высокий</mat-radio-button>
+            </mat-radio-group>
+        </div>
+
+        <div>
+            <label id="status-group-label">Статус:</label>
+            <mat-radio-group aria-label="status-group-label" formControlName="status">
+                <mat-radio-button [value]="0">Создана</mat-radio-button>
+                <mat-radio-button [value]="1">В работе</mat-radio-button>
+                <mat-radio-button [value]="2">Завершена</mat-radio-button>
+            </mat-radio-group>
+        </div>
+
+        <mat-form-field>
+            <mat-label>Описание задачи</mat-label>
+            <textarea matInput formControlName="description"></textarea>
+            @if (formGroup.controls['description'].hasError('required')) {
+                <mat-error>Описание <strong>необходимо</strong></mat-error>
+            }
+        </mat-form-field>
+
+        <mat-form-field [hidden]="!(loadUsersList$ | async)">
+            <mat-label>Исполнители</mat-label>
+            <mat-chip-grid #chipGrid aria-label="performer selection">
+                @for (performer of formGroup.controls['performers'].value; track performer.id) {
+                    <mat-chip-row (removed)="removePerformer(performer)">
+                        {{ performer.name }}
+                        <button matChipRemove [attr.aria-label]="'remove ' + performer">
+                            <mat-icon>cancel</mat-icon>
+                        </button>
+                    </mat-chip-row>
+                }
+            </mat-chip-grid>
+            <input placeholder="Новый исполнитель..." #performerInput [formControl]="performersControl"
+                   [matChipInputFor]="chipGrid" [matAutocomplete]="auto"
+                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+            />
+            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selectedPerformer($event)">
+                @for (users of filteredUsers$ | async; track users.id) {
+                    <mat-option [value]="users.id">{{ users.name }}</mat-option>
+                }
+            </mat-autocomplete>
+        </mat-form-field>
+    </div>
+</div>
+</ng-container>
+
+<ng-template #spinner>
+    <div class="spinner-container">
+        <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+    </div>
+</ng-template>

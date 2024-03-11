@@ -1,0 +1,125 @@
+<div class="task-list">
+    <ng-container *ngIf="!(isLoading$ | async); else spinner">
+        <button mat-raised-button color="primary" (click)="router.navigate(['task-info', 0])">
+            <mat-icon>add_circle</mat-icon>
+            Новая задача
+        </button>
+
+        <table mat-table matSort [dataSource]="dataSource" #tableSort="matSort">
+            <ng-container matColumnDef="title">
+                <th mat-header-cell *matHeaderCellDef>
+                    <div class="table__header">Название</div>
+                </th>
+                <td mat-cell *matCellDef="let task">{{ task.title }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="priority">
+                <th *matHeaderCellDef>
+                    <div class="table__header">Приоритет</div>
+                </th>
+                <td mat-cell *matCellDef="let task">
+                    <div class="label-pill"
+                         [ngClass]="{
+                        'label-pill_red': task.priority === 2,
+                        'label-pill_yellow': task.priority === 1,
+                        'label-pill_green': task.priority === 0,
+                    }">
+                        {{ task.priority === 2 ? 'Высокий' : (task.priority === 1 ? 'Средний' : 'Низкий') }}
+                    </div>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="deadline">
+                <th *matHeaderCellDef>
+                    <div class="table__header">
+                        <div class="table__filter-header">
+                            Дедлайн
+                            @if (sortColumn === 'deadline') {
+                                @if (sortDirection === SortDirection.ASC) {
+                                    <mat-icon (click)="sortTable('deadline', SortDirection.DESC)">north</mat-icon>
+                                } @else {
+                                    <mat-icon (click)="sortTable('', SortDirection.NONE)">south</mat-icon>
+                                }
+                            } @else {
+                                <mat-icon (click)="sortTable('deadline', SortDirection.ASC)">sort</mat-icon>
+                            }
+                        </div>
+                        <input type="date" (change)="applyFilters('deadline', $event)">
+                    </div>
+                </th>
+                <td mat-cell *matCellDef="let task">
+                    <div class="date-cell">{{ task.deadline | date: 'dd.MM.yyyy' }}</div>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+                <th *matHeaderCellDef>
+                    <div class="table__header">
+                    <span class="table__filter-header">
+                        Статус
+                        @if (sortColumn === 'status') {
+                            @if (sortDirection === SortDirection.ASC) {
+                                <mat-icon (click)="sortTable('status', SortDirection.DESC)">north</mat-icon>
+                            } @else if (sortDirection === SortDirection.DESC) {
+                                <mat-icon (click)="sortTable('', SortDirection.NONE)">south</mat-icon>
+                            }
+                        } @else {
+                            <mat-icon (click)="sortTable('status', SortDirection.ASC)">sort</mat-icon>
+                        }
+                    </span>
+                        <mat-select (selectionChange)="applyFilters('status', $event)" value="-1">
+                            <mat-option value="-1">-</mat-option>
+                            <mat-option value="1">Создана</mat-option>
+                            <mat-option value="2">В работе</mat-option>
+                            <mat-option value="3">Завершена</mat-option>
+                        </mat-select>
+
+                    </div>
+                </th>
+                <td mat-cell *matCellDef="let task">
+                    <div class="label-pill"
+                         [ngClass]="{
+                        'label-pill_high': task.status === 2,
+                        'label-pill_middle': task.status === 1,
+                        'label-pill_low': task.status === 0,
+                }">
+                        {{ task.status === 2 ? 'Завершена' : (task.status === 1 ? 'В работе' : 'Создана') }}
+                    </div>
+                </td>
+            </ng-container>
+
+            <ng-container matColumnDef="performers">
+                <th *matHeaderCellDef>
+                    <div class="table__header">
+                    <span>
+                        Исполнители
+                    </span>
+                        <mat-select (selectionChange)="applyFilters('performers', $event)" value="-1">
+                            <mat-option value="-1">-</mat-option>
+                            @for (user of users$ | async; track user.id) {
+                                <mat-option [value]="user.id">{{ user.name }}</mat-option>
+                            }
+                        </mat-select>
+                    </div>
+                </th>
+                <td mat-cell *matCellDef="let task">
+                    <div class="user-cell">
+                        @for (performer of task.performers; track performer.id) {
+                            <span class="label-pill label-pill_grey">{{ performer.name }}</span>
+                        }
+                    </div>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let task; columns: displayedColumns;"
+                (click)="router.navigate(['task-info', task.id])" class="row-link"></tr>
+        </table>
+    </ng-container>
+</div>
+
+<ng-template #spinner>
+    <div class="spinner-container">
+        <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+    </div>
+</ng-template>
