@@ -1,6 +1,11 @@
 .task-list {
   padding: 1% 2% 2%;
 
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
   table {
     margin-top: 1%;
 

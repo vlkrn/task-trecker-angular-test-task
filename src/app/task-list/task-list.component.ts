@@ -11,6 +11,7 @@ import {Observable, Subscription} from "rxjs";
 import {MatInput} from "@angular/material/input";
 import {UserService} from "../services/user.service";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
+import {MatPaginator, MatPaginatorIntl, PageEvent} from "@angular/material/paginator";
 
 enum SortDirection {
     NONE = '',
@@ -21,7 +22,7 @@ enum SortDirection {
 @Component({
     selector: 'app-task-list',
     standalone: true,
-    imports: [MatTableModule, DatePipe, NgClass, MatSortModule, MatButton, MatIcon, NgForOf, MatSelect, MatOption, AsyncPipe, NgIf, MatInput, MatProgressSpinner],
+    imports: [MatTableModule, DatePipe, NgClass, MatSortModule, MatButton, MatIcon, NgForOf, MatSelect, MatOption, AsyncPipe, NgIf, MatInput, MatProgressSpinner, MatPaginator],
     templateUrl: './task-list.component.html',
     styleUrl: './task-list.component.scss'
 })
@@ -42,8 +43,19 @@ export class TaskListComponent implements OnInit, OnDestroy {
     subscriptions: Subscription[] = [];
 
     @ViewChild('tableSort') sort: MatSort = new MatSort();
+    @ViewChild(MatPaginator) paginator: MatPaginator;
 
-    constructor(public router: Router, private tasksService: TaskService, private userService: UserService, private cdr: ChangeDetectorRef) {
+    constructor(public router: Router, private tasksService: TaskService, private userService: UserService, private cdr: ChangeDetectorRef, private paginatorIntl: MatPaginatorIntl) {
+        this.paginatorIntl.itemsPerPageLabel = 'Элементов на странице:';
+        this.paginatorIntl.getRangeLabel = (page: number, pageSize: number, length: number) => {
+            if (length === 0 || pageSize === 0) {
+                return `0 из ${length}`;
+            }
+            length = Math.max(length, 0);
+            const startIndex = page * pageSize;
+            const endIndex = startIndex < length ? Math.min(startIndex + pageSize, length) : startIndex + pageSize;
+            return `${startIndex + 1} - ${endIndex} из ${length}`;
+        };
     }
     ngOnInit() {
         this.isLoading$ = new Observable<boolean>(observer => {
@@ -54,6 +66,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
                 observer.next(false);
                 this.cdr.detectChanges();
                 this.dataSource.sort = this.sort;
+                this.dataSource.paginator = this.paginator;
             }));
         });
     }
@@ -167,6 +180,17 @@ export class TaskListComponent implements OnInit, OnDestroy {
             start: this.sortDirection,
             disableClear: true
         });
+    }
+
+    /**
+     * Изменение параметров пагинации
+     *
+     * @param event
+     */
+    onPageChange(event: PageEvent): void {
+        this.dataSource.paginator = this.paginator;
+        this.dataSource.paginator.pageIndex = event.pageIndex;
+        this.dataSource.paginator.pageSize = event.pageSize;
     }
 
     protected readonly SortDirection = SortDirection;
